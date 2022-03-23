@@ -6,6 +6,7 @@ import android.os.ResultReceiver
 import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.exoplayerplayground.databinding.ActivityMainBinding
 import com.google.android.exoplayer2.ExoPlayer
@@ -13,7 +14,10 @@ import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import com.google.android.exoplayer2.ext.mediasession.TimelineQueueNavigator
+import com.google.android.exoplayer2.offline.DownloadRequest
+import com.google.android.exoplayer2.offline.DownloadService
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource
+import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.upstream.DefaultDataSource
@@ -41,6 +45,36 @@ class MainActivity : AppCompatActivity() {
         viewBinding.buttonPlay.setOnClickListener {
             playPlayer(player)
         }
+
+        viewBinding.buttonDownload.setOnClickListener {
+            startDownload()
+        }
+
+
+        // Start the download service if it should be running but it's not currently.
+        // Starting the service in the foreground causes notification flicker if there is no scheduled
+        // action. Starting it in the background throws an exception if the app is in the background too
+        // (e.g. if device screen is locked).
+        try {
+            DownloadService.start(this, ClipDownloadService::class.java)
+        } catch (e: IllegalStateException) {
+            DownloadService.startForeground(this, ClipDownloadService::class.java)
+        }
+    }
+
+    private fun startDownload() {
+
+        val downloadRequest: DownloadRequest = DownloadRequest.Builder(
+            "123",
+            Uri.parse("https://www.bensound.com/bensound-music/bensound-anewbeginning.mp3")
+        ).setMimeType("audio/mpeg").build()
+
+        DownloadService.sendAddDownload(
+            this,
+            ClipDownloadService::class.java,
+            downloadRequest,
+            /* foreground= */ false
+        )
     }
 
     private fun releasePlayer() {
@@ -183,7 +217,9 @@ class MainActivity : AppCompatActivity() {
 
         override fun onPrepareFromUri(uri: Uri, playWhenReady: Boolean, extras: Bundle?) = Unit
 
-        override fun onPrepare(playWhenReady: Boolean) = Unit
+        override fun onPrepare(playWhenReady: Boolean) {
+            Log.d("PlaybackPrepare", "Called")
+        }
     }
 
 
