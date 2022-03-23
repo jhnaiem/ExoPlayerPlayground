@@ -38,12 +38,13 @@ class ClipDownloadService(
         notMetRequirements: Int
     ): Notification {
         return DownloadUtil().getDownloadNotificationHelper(/* context= */ this)
-        .buildProgressNotification(
-            /* context= */ this,
-            R.drawable.ic_launcher_background,
-            /* contentIntent= */ null,
-            /* message= */ null,
-            downloads,
-            notMetRequirements);
+            .buildProgressNotification(
+                /* context= */ this,
+                R.drawable.ic_launcher_background,
+                /* contentIntent= */ null,
+                /* message= */ null,
+                downloads,
+                notMetRequirements
+            );
     }
 }

@@ -14,11 +14,13 @@ import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import com.google.android.exoplayer2.ext.mediasession.TimelineQueueNavigator
+import com.google.android.exoplayer2.offline.Download
 import com.google.android.exoplayer2.offline.DownloadRequest
 import com.google.android.exoplayer2.offline.DownloadService
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.source.MediaSource
+import com.google.android.exoplayer2.source.MediaSource.Factory
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.upstream.DefaultDataSource
 import com.google.android.exoplayer2.util.Util
@@ -50,6 +52,10 @@ class MainActivity : AppCompatActivity() {
             startDownload()
         }
 
+        viewBinding.buttonPlayFromCache.setOnClickListener {
+            playFromCache()
+        }
+
 
         // Start the download service if it should be running but it's not currently.
         // Starting the service in the foreground causes notification flicker if there is no scheduled
@@ -69,12 +75,14 @@ class MainActivity : AppCompatActivity() {
             Uri.parse("https://www.bensound.com/bensound-music/bensound-creativeminds.mp3")
         ).setMimeType("audio/mpeg").build()
 
-        DownloadService.sendAddDownload(
-            this,
-            ClipDownloadService::class.java,
-            downloadRequest,
-            /* foreground= */ false
-        )
+        if (downloadRequest != null) {
+            DownloadService.sendAddDownload(
+                this,
+                ClipDownloadService::class.java,
+                downloadRequest!!,
+                /* foreground= */ false
+            )
+        }
     }
 
     private fun releasePlayer() {
@@ -99,14 +107,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializePlayer() {
-        player = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(
-                DefaultMediaSourceFactory(
-                    DownloadUtil().getCacheDataSourceFactory(
-                        this
-                    )
-                )
-            )
+        player = ExoPlayer.Builder(this).setMediaSourceFactory(createMediaSourceFactory())
             .build()
             .also { exoPlayer ->
                 viewBinding.pvMain.player = exoPlayer
@@ -144,6 +145,20 @@ class MainActivity : AppCompatActivity() {
 
     fun playFromCache() {
 
+        var download: Download? = null
+        val downloadIndex = DownloadUtil().getDownloadManager(this).downloadIndex
+        val loadedDownloads = downloadIndex.getDownloads()
+        while (loadedDownloads.moveToNext()) {
+            download = loadedDownloads.download
+        }
+        val downloadRequest = download?.request
+        val mediaItem = downloadRequest?.toMediaItem()
+
+        if (mediaItem != null)
+            player?.setMediaItem(mediaItem)
+        player?.prepare()
+        player?.play()
+
     }
 
 
@@ -161,6 +176,12 @@ class MainActivity : AppCompatActivity() {
         ).createMediaSource(MediaItem.fromUri(uri))
     }
 
+
+    private fun createMediaSourceFactory(): Factory {
+
+        return DefaultMediaSourceFactory(DownloadUtil().getDataSourceFactory(this))
+
+    }
 
     public override fun onStart() {
         super.onStart()

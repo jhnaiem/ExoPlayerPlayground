@@ -26,6 +26,15 @@
         app:layout_constraintStart_toEndOf="@id/buttonPlay"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <Button
+        android:id="@+id/buttonPlayFromCache"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Play Cache"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/buttonPlay" />
+
     <com.google.android.exoplayer2.ui.PlayerView
         android:id="@+id/pv_main"
         android:layout_width="match_parent"
@@ -33,6 +42,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/buttonPlayFromCache" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -8,6 +8,7 @@ import com.google.android.exoplayer2.database.StandaloneDatabaseProvider
 import com.google.android.exoplayer2.offline.DownloadManager
 import com.google.android.exoplayer2.ui.DownloadNotificationHelper
 import com.google.android.exoplayer2.upstream.DataSource.Factory
+import com.google.android.exoplayer2.upstream.DefaultDataSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.upstream.HttpDataSource
 import com.google.android.exoplayer2.upstream.cache.Cache
@@ -32,6 +33,7 @@ class DownloadUtil {
     private val DOWNLOAD_CONTENT_DIRECTORY = "downloads"
 
     private var dataSourceFactory: Factory? = null
+
     private var httpDataSourceFactory: HttpDataSource.Factory? = null
 
 
@@ -90,7 +92,7 @@ class DownloadUtil {
     @Synchronized
     private fun getDownloadDirectory(context: Context): File? {
         if (downloadDirectory == null) {
-            downloadDirectory = context.cacheDir
+            downloadDirectory = context.getExternalFilesDir( /* type= */null)
             if (downloadDirectory == null) {
                 downloadDirectory = context.filesDir
             }
@@ -119,6 +121,38 @@ class DownloadUtil {
             }
         }
         return DefaultHttpDataSource.Factory()
+    }
+
+
+    /** Returns a [DataSource.Factory].  */
+    @Synchronized
+    fun getDataSourceFactory(context: Context): Factory {
+        var context = context
+        if (dataSourceFactory == null) {
+            context = context.applicationContext
+            val upstreamFactory = DefaultDataSource.Factory(
+                context,
+                getHttpDataSourceFactory(context)
+            )
+            dataSourceFactory =
+                buildReadOnlyCacheDataSource(
+                    upstreamFactory,
+                    getDownloadCache(context)
+                )
+        }
+        return dataSourceFactory!!
+    }
+
+    // If the same player instance will also be used to play non-downloaded content then the CacheDataSource.
+    // Factory should be configured as read-only to avoid downloading that content as well during playback.
+    private fun buildReadOnlyCacheDataSource(
+        upstreamFactory: Factory, cache: Cache
+    ): CacheDataSource.Factory {
+        return CacheDataSource.Factory()
+            .setCache(cache)
+            .setUpstreamDataSourceFactory(upstreamFactory)
+            .setCacheWriteDataSinkFactory(null)
+            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
     }
 
     fun getCacheDataSourceFactory(context: Context): Factory {
