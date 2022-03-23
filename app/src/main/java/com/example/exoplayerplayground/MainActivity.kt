@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
 
         val downloadRequest: DownloadRequest = DownloadRequest.Builder(
             "123",
-            Uri.parse("https://www.bensound.com/bensound-music/bensound-anewbeginning.mp3")
+            Uri.parse("https://www.bensound.com/bensound-music/bensound-creativeminds.mp3")
         ).setMimeType("audio/mpeg").build()
 
         DownloadService.sendAddDownload(
@@ -100,6 +100,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializePlayer() {
         player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(
+                DefaultMediaSourceFactory(
+                    DownloadUtil().getCacheDataSourceFactory(
+                        this
+                    )
+                )
+            )
             .build()
             .also { exoPlayer ->
                 viewBinding.pvMain.player = exoPlayer
@@ -125,7 +132,7 @@ class MainActivity : AppCompatActivity() {
 
             setPlaybackPreparer(MusicPlaybackPreparer())
 
-            //to provide control over the playlist then tell the connector to handle the
+            //To provide control over the playlist then tell the connector to handle the
             // ACTION_SKIP_* commands by adding a QueueNavigator.
             mediaSessionConnector.setQueueNavigator(object : TimelineQueueNavigator(mediaSession) {
                 override fun getMediaDescription(player: Player, idx: Int): MediaDescriptionCompat {
@@ -133,6 +140,10 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
+    }
+
+    fun playFromCache() {
+
     }
 
 

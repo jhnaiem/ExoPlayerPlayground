@@ -31,15 +31,17 @@ class DownloadUtil {
     private val TAG = "DemoUtil"
     private val DOWNLOAD_CONTENT_DIRECTORY = "downloads"
 
-    private val dataSourceFactory: Factory? = null
-    private  var httpDataSourceFactory: HttpDataSource.Factory? = null
+    private var dataSourceFactory: Factory? = null
+    private var httpDataSourceFactory: HttpDataSource.Factory? = null
 
 
     private var databaseProvider: DatabaseProvider? = null
 
     private var downloadDirectory: File? = null
 
-    private var downloadCache: Cache? = null
+    companion object {
+        private var downloadCache: Cache? = null
+    }
 
     private var downloadManager: DownloadManager? = null
 
@@ -88,7 +90,7 @@ class DownloadUtil {
     @Synchronized
     private fun getDownloadDirectory(context: Context): File? {
         if (downloadDirectory == null) {
-            downloadDirectory = context.getExternalFilesDir(/* type= */  /* type= */null)
+            downloadDirectory = context.cacheDir
             if (downloadDirectory == null) {
                 downloadDirectory = context.filesDir
             }
@@ -118,7 +120,14 @@ class DownloadUtil {
         }
         return DefaultHttpDataSource.Factory()
     }
-    
+
+    fun getCacheDataSourceFactory(context: Context): Factory {
+        return CacheDataSource.Factory()
+            .setCache(DownloadUtil().getDownloadCache(context))
+            .setUpstreamDataSourceFactory(getHttpDataSourceFactory(context))
+            .setCacheWriteDataSinkFactory(null)
+    }
+
     @Synchronized
     fun getDownloadNotificationHelper(
         context: Context?
